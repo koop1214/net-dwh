@@ -444,7 +444,7 @@
     <created_date>2021/07/24 17:56:57.160</created_date>
     <modified_user>-</modified_user>
     <modified_date>2021/07/24 17:56:57.160</modified_date>
-    <key_for_session_key/>
+    <key_for_session_key>H4sIAAAAAAAAAAMAAAAAAAAAAAA=</key_for_session_key>
     <is_key_private>N</is_key_private>
   </info>
   <notepads>
@@ -800,7 +800,7 @@
             <storagetype>normal</storagetype>
             <name>contact_data</name>
             <length>-1</length>
-            <precision>0</precision>
+            <precision>-1</precision>
             <origin>demo.bookings.tickets</origin>
             <comments>contact_data</comments>
             <conversion_Mask/>
@@ -821,7 +821,7 @@
         </storage-meta>
         <name>contact_data</name>
         <length>-1</length>
-        <precision>0</precision>
+        <precision>-1</precision>
         <origin>demo.bookings.tickets</origin>
         <comments>contact_data</comments>
         <conversion_Mask/>
@@ -926,6 +926,62 @@
     </GUI>
   </step>
   <step>
+    <name>Некорректные данные</name>
+    <type>TableOutput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>avia</connection>
+    <schema>public</schema>
+    <table>rejected_dim_passengers</table>
+    <commit>1000</commit>
+    <truncate>N</truncate>
+    <ignore_errors>N</ignore_errors>
+    <use_batch>Y</use_batch>
+    <specify_fields>Y</specify_fields>
+    <partitioning_enabled>N</partitioning_enabled>
+    <partitioning_field/>
+    <partitioning_daily>N</partitioning_daily>
+    <partitioning_monthly>Y</partitioning_monthly>
+    <tablename_in_field>N</tablename_in_field>
+    <tablename_field/>
+    <tablename_in_table>Y</tablename_in_table>
+    <return_keys>N</return_keys>
+    <return_field/>
+    <fields>
+      <field>
+        <column_name>passenger_code</column_name>
+        <stream_name>passenger_id</stream_name>
+      </field>
+      <field>
+        <column_name>passenger_name</column_name>
+        <stream_name>passenger_name</stream_name>
+      </field>
+      <field>
+        <column_name>contact_data</column_name>
+        <stream_name>contact_data</stream_name>
+      </field>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>544</xloc>
+      <yloc>128</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
     <name>Обновления измерения</name>
     <type>InsertUpdate</type>
     <description/>
@@ -954,23 +1010,13 @@
         <update>Y</update>
       </value>
       <value>
-        <name>first_name</name>
-        <rename>first_name</rename>
+        <name>passenger_name</name>
+        <rename>passenger_name</rename>
         <update>Y</update>
       </value>
       <value>
-        <name>last_name</name>
-        <rename>last_name</rename>
-        <update>Y</update>
-      </value>
-      <value>
-        <name>phone</name>
-        <rename>phone</rename>
-        <update>Y</update>
-      </value>
-      <value>
-        <name>email</name>
-        <rename>email</rename>
+        <name>contact_data</name>
+        <rename>contact_data</rename>
         <update>Y</update>
       </value>
     </lookup>
@@ -1146,62 +1192,6 @@
     <GUI>
       <xloc>368</xloc>
       <yloc>192</yloc>
-      <draw>Y</draw>
-    </GUI>
-  </step>
-  <step>
-    <name>Некорректные данные</name>
-    <type>TableOutput</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <connection>avia</connection>
-    <schema>public</schema>
-    <table>rejected_dim_passengers</table>
-    <commit>1000</commit>
-    <truncate>N</truncate>
-    <ignore_errors>N</ignore_errors>
-    <use_batch>Y</use_batch>
-    <specify_fields>Y</specify_fields>
-    <partitioning_enabled>N</partitioning_enabled>
-    <partitioning_field/>
-    <partitioning_daily>N</partitioning_daily>
-    <partitioning_monthly>Y</partitioning_monthly>
-    <tablename_in_field>N</tablename_in_field>
-    <tablename_field/>
-    <tablename_in_table>Y</tablename_in_table>
-    <return_keys>N</return_keys>
-    <return_field/>
-    <fields>
-      <field>
-        <column_name>passenger_code</column_name>
-        <stream_name>passenger_id</stream_name>
-      </field>
-      <field>
-        <column_name>passenger_name</column_name>
-        <stream_name>passenger_name</stream_name>
-      </field>
-      <field>
-        <column_name>contact_data</column_name>
-        <stream_name>contact_data</stream_name>
-      </field>
-    </fields>
-    <attributes/>
-    <cluster_schema/>
-    <remotesteps>
-      <input>
-      </input>
-      <output>
-      </output>
-    </remotesteps>
-    <GUI>
-      <xloc>544</xloc>
-      <yloc>128</yloc>
       <draw>Y</draw>
     </GUI>
   </step>

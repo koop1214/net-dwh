@@ -3,10 +3,8 @@ CREATE TABLE IF NOT EXISTS dim_passengers
 (
     id             serial PRIMARY KEY,
     passenger_code varchar(20) NOT NULL,
-    first_name     varchar(20) NOT NULL,
-    last_name      varchar(20) NOT NULL,
-    phone          bigint,
-    email          varchar(60)
+    passenger_name text        NOT NULL,
+    contact_data   jsonb       NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS dim_passengers_passenger_code_index
@@ -137,4 +135,21 @@ CREATE TABLE IF NOT EXISTS fact_flights
     arrival_airport_id       int                      NOT NULL REFERENCES dim_airports (id),
     tariff_id                int                      NOT NULL REFERENCES dim_tariffs (id),
     amount                   numeric(10, 2)           NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS rejected_fact_flights
+(
+    passenger_code         varchar(20)              NOT NULL,
+    scheduled_departure_dt timestamp WITH TIME ZONE NOT NULL,
+    actual_departure_dt    timestamp WITH TIME ZONE NOT NULL,
+    departure_delay        int                      NOT NULL DEFAULT 0,
+    scheduled_arrival_dt   timestamp WITH TIME ZONE NOT NULL,
+    actual_arrival_dt      timestamp WITH TIME ZONE NOT NULL,
+    arrival_delay          int                      NOT NULL DEFAULT 0,
+    aircraft_code          char(3)                  NOT NULL,
+    departure_airport      char(3)                  NOT NULL,
+    arrival_airport        char(3)                  NOT NULL,
+    fare_conditions        varchar(10)              NOT NULL,
+    amount                 numeric(10, 2)           NOT NULL,
+    created_at             timestamp WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

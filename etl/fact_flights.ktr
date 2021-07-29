@@ -556,11 +556,6 @@
   </connection>
   <order>
     <hop>
-      <from>demo.bookings.flights</from>
-      <to>aircraft</to>
-      <enabled>Y</enabled>
-    </hop>
-    <hop>
       <from>aircraft</from>
       <to>tariff</to>
       <enabled>Y</enabled>
@@ -585,7 +580,116 @@
       <to>Запись в fact_flights</to>
       <enabled>Y</enabled>
     </hop>
+    <hop>
+      <from>demo.bookings.flights</from>
+      <to>Проверка качества</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Проверка качества</from>
+      <to>aircraft</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Проверка качества</from>
+      <to>Некорректные данные</to>
+      <enabled>Y</enabled>
+    </hop>
   </order>
+  <step>
+    <name>aircraft</name>
+    <type>CombinationLookup</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <schema>public</schema>
+    <table>dim_aircrafts</table>
+    <connection>avia</connection>
+    <commit>100</commit>
+    <cache_size>9999</cache_size>
+    <replace>Y</replace>
+    <preloadCache>N</preloadCache>
+    <crc>N</crc>
+    <crcfield>hashcode</crcfield>
+    <fields>
+      <key>
+        <name>aircraft_code</name>
+        <lookup>aircraft_code</lookup>
+      </key>
+      <return>
+        <name>id</name>
+        <creation_method>autoinc</creation_method>
+        <use_autoinc>Y</use_autoinc>
+      </return>
+    </fields>
+    <sequence/>
+    <last_update_field/>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>464</xloc>
+      <yloc>320</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>arrival airport</name>
+    <type>CombinationLookup</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <schema>public</schema>
+    <table>dim_airports</table>
+    <connection>avia</connection>
+    <commit>100</commit>
+    <cache_size>9999</cache_size>
+    <replace>Y</replace>
+    <preloadCache>N</preloadCache>
+    <crc>N</crc>
+    <crcfield>hashcode</crcfield>
+    <fields>
+      <key>
+        <name>arrival_airport</name>
+        <lookup>airport_code</lookup>
+      </key>
+      <return>
+        <name>id</name>
+        <creation_method>autoinc</creation_method>
+        <use_autoinc>Y</use_autoinc>
+      </return>
+    </fields>
+    <sequence/>
+    <last_update_field/>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>976</xloc>
+      <yloc>320</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
   <step>
     <name>demo.bookings.flights</name>
     <type>TableInput</type>
@@ -601,13 +705,13 @@
     <sql>SELECT tf.fare_conditions,                                                                                        -- tariff_id
        tf.amount,                                                                                                 -- amount
        t.passenger_id                                                                     AS passenger_code,
-       EXTRACT(EPOCH FROM f.actual_departure) -
-       EXTRACT(EPOCH FROM f.scheduled_departure)                                          AS departure_delay,     -- departure_delay
-       EXTRACT(EPOCH FROM f.actual_arrival) -
-       EXTRACT(EPOCH FROM f.scheduled_arrival)                                            AS arrival_delay,       -- arrival_delay
+       EXTRACT(EPOCH FROM f.actual_departure) - EXTRACT(EPOCH FROM f.scheduled_departure) AS departure_delay,     -- departure_delay
+       EXTRACT(EPOCH FROM f.actual_arrival) -   EXTRACT(EPOCH FROM f.scheduled_arrival)   AS arrival_delay,       -- arrival_delay
        f.departure_airport,                                                                                       -- departure_airport_id
        f.arrival_airport,                                                                                         -- arrival_airport_id
        f.aircraft_code,                                                                                           -- aircraft_id
+       f.scheduled_departure                                                              AS scheduled_departure_dt, -- scheduled_departure_dt
+       f.scheduled_arrival                                                                AS scheduled_arrival_dt,   -- scheduled_arrival_dt
        f.actual_departure                                                                 AS actual_departure_dt, -- actual_departure_dt
        f.actual_arrival                                                                   AS actual_arrival_dt,   -- actual_arrival_dt
        TO_CHAR(f.actual_departure, 'YYYYMMDD')::int                                       AS actual_departure_date_id,
@@ -811,6 +915,52 @@
       <value-meta>
         <type>Timestamp</type>
         <storagetype>normal</storagetype>
+        <name>scheduled_departure_dt</name>
+        <length>6</length>
+        <precision>-1</precision>
+        <origin>demo.bookings.flights</origin>
+        <comments>scheduled_departure_dt</comments>
+        <conversion_Mask/>
+        <decimal_symbol>.</decimal_symbol>
+        <grouping_symbol>,</grouping_symbol>
+        <currency_symbol/>
+        <trim_type>none</trim_type>
+        <case_insensitive>N</case_insensitive>
+        <collator_disabled>Y</collator_disabled>
+        <collator_strength>0</collator_strength>
+        <sort_descending>N</sort_descending>
+        <output_padding>N</output_padding>
+        <date_format_lenient>N</date_format_lenient>
+        <date_format_locale>en_US</date_format_locale>
+        <date_format_timezone>Europe/Moscow</date_format_timezone>
+        <lenient_string_to_number>N</lenient_string_to_number>
+      </value-meta>
+      <value-meta>
+        <type>Timestamp</type>
+        <storagetype>normal</storagetype>
+        <name>scheduled_arrival_dt</name>
+        <length>6</length>
+        <precision>-1</precision>
+        <origin>demo.bookings.flights</origin>
+        <comments>scheduled_arrival_dt</comments>
+        <conversion_Mask/>
+        <decimal_symbol>.</decimal_symbol>
+        <grouping_symbol>,</grouping_symbol>
+        <currency_symbol/>
+        <trim_type>none</trim_type>
+        <case_insensitive>N</case_insensitive>
+        <collator_disabled>Y</collator_disabled>
+        <collator_strength>0</collator_strength>
+        <sort_descending>N</sort_descending>
+        <output_padding>N</output_padding>
+        <date_format_lenient>N</date_format_lenient>
+        <date_format_locale>en_US</date_format_locale>
+        <date_format_timezone>Europe/Moscow</date_format_timezone>
+        <lenient_string_to_number>N</lenient_string_to_number>
+      </value-meta>
+      <value-meta>
+        <type>Timestamp</type>
+        <storagetype>normal</storagetype>
         <name>actual_departure_dt</name>
         <length>6</length>
         <precision>-1</precision>
@@ -910,101 +1060,7 @@
       </output>
     </remotesteps>
     <GUI>
-      <xloc>160</xloc>
-      <yloc>320</yloc>
-      <draw>Y</draw>
-    </GUI>
-  </step>
-  <step>
-    <name>aircraft</name>
-    <type>CombinationLookup</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <schema>public</schema>
-    <table>dim_aircrafts</table>
-    <connection>avia</connection>
-    <commit>100</commit>
-    <cache_size>9999</cache_size>
-    <replace>Y</replace>
-    <preloadCache>N</preloadCache>
-    <crc>N</crc>
-    <crcfield>hashcode</crcfield>
-    <fields>
-      <key>
-        <name>aircraft_code</name>
-        <lookup>aircraft_code</lookup>
-      </key>
-      <return>
-        <name>id</name>
-        <creation_method>autoinc</creation_method>
-        <use_autoinc>Y</use_autoinc>
-      </return>
-    </fields>
-    <sequence/>
-    <last_update_field/>
-    <attributes/>
-    <cluster_schema/>
-    <remotesteps>
-      <input>
-      </input>
-      <output>
-      </output>
-    </remotesteps>
-    <GUI>
-      <xloc>360</xloc>
-      <yloc>320</yloc>
-      <draw>Y</draw>
-    </GUI>
-  </step>
-  <step>
-    <name>tariff</name>
-    <type>CombinationLookup</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <schema>public</schema>
-    <table>dim_tariffs</table>
-    <connection>avia</connection>
-    <commit>100</commit>
-    <cache_size>9999</cache_size>
-    <replace>Y</replace>
-    <preloadCache>N</preloadCache>
-    <crc>N</crc>
-    <crcfield>hashcode</crcfield>
-    <fields>
-      <key>
-        <name>fare_conditions</name>
-        <lookup>tariff_code</lookup>
-      </key>
-      <return>
-        <name>id</name>
-        <creation_method>autoinc</creation_method>
-        <use_autoinc>Y</use_autoinc>
-      </return>
-    </fields>
-    <sequence/>
-    <last_update_field/>
-    <attributes/>
-    <cluster_schema/>
-    <remotesteps>
-      <input>
-      </input>
-      <output>
-      </output>
-    </remotesteps>
-    <GUI>
-      <xloc>512</xloc>
+      <xloc>80</xloc>
       <yloc>320</yloc>
       <draw>Y</draw>
     </GUI>
@@ -1051,54 +1107,7 @@
       </output>
     </remotesteps>
     <GUI>
-      <xloc>704</xloc>
-      <yloc>320</yloc>
-      <draw>Y</draw>
-    </GUI>
-  </step>
-  <step>
-    <name>arrival airport</name>
-    <type>CombinationLookup</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <schema>public</schema>
-    <table>dim_airports</table>
-    <connection>avia</connection>
-    <commit>100</commit>
-    <cache_size>9999</cache_size>
-    <replace>Y</replace>
-    <preloadCache>N</preloadCache>
-    <crc>N</crc>
-    <crcfield>hashcode</crcfield>
-    <fields>
-      <key>
-        <name>arrival_airport</name>
-        <lookup>airport_code</lookup>
-      </key>
-      <return>
-        <name>id</name>
-        <creation_method>autoinc</creation_method>
-        <use_autoinc>Y</use_autoinc>
-      </return>
-    </fields>
-    <sequence/>
-    <last_update_field/>
-    <attributes/>
-    <cluster_schema/>
-    <remotesteps>
-      <input>
-      </input>
-      <output>
-      </output>
-    </remotesteps>
-    <GUI>
-      <xloc>864</xloc>
+      <xloc>816</xloc>
       <yloc>320</yloc>
       <draw>Y</draw>
     </GUI>
@@ -1145,7 +1154,54 @@
       </output>
     </remotesteps>
     <GUI>
-      <xloc>1024</xloc>
+      <xloc>1136</xloc>
+      <yloc>320</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>tariff</name>
+    <type>CombinationLookup</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <schema>public</schema>
+    <table>dim_tariffs</table>
+    <connection>avia</connection>
+    <commit>100</commit>
+    <cache_size>9999</cache_size>
+    <replace>Y</replace>
+    <preloadCache>N</preloadCache>
+    <crc>N</crc>
+    <crcfield>hashcode</crcfield>
+    <fields>
+      <key>
+        <name>fare_conditions</name>
+        <lookup>tariff_code</lookup>
+      </key>
+      <return>
+        <name>id</name>
+        <creation_method>autoinc</creation_method>
+        <use_autoinc>Y</use_autoinc>
+      </return>
+    </fields>
+    <sequence/>
+    <last_update_field/>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>624</xloc>
       <yloc>320</yloc>
       <draw>Y</draw>
     </GUI>
@@ -1237,8 +1293,172 @@
       </output>
     </remotesteps>
     <GUI>
-      <xloc>1168</xloc>
+      <xloc>1280</xloc>
       <yloc>320</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Проверка качества</name>
+    <type>FilterRows</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <send_true_to>aircraft</send_true_to>
+    <send_false_to>Некорректные данные</send_false_to>
+    <compare>
+      <condition>
+        <negated>N</negated>
+        <conditions>
+          <condition>
+            <negated>N</negated>
+            <leftvalue>departure_delay</leftvalue>
+            <function>&gt;=</function>
+            <rightvalue/>
+            <value>
+              <name>constant</name>
+              <type>Number</type>
+              <text>0.0</text>
+              <length>-1</length>
+              <precision>-1</precision>
+              <isnull>N</isnull>
+              <mask>####0.0#########;-####0.0#########</mask>
+            </value>
+          </condition>
+          <condition>
+            <negated>N</negated>
+            <operator>AND</operator>
+            <leftvalue>amount</leftvalue>
+            <function>&gt;</function>
+            <rightvalue/>
+            <value>
+              <name>constant</name>
+              <type>Number</type>
+              <text>0.0</text>
+              <length>-1</length>
+              <precision>-1</precision>
+              <isnull>N</isnull>
+              <mask>####0.0#########;-####0.0#########</mask>
+            </value>
+          </condition>
+          <condition>
+            <negated>N</negated>
+            <operator>AND</operator>
+            <leftvalue>actual_arrival_dt</leftvalue>
+            <function>&gt;</function>
+            <rightvalue>actual_departure_dt</rightvalue>
+          </condition>
+        </conditions>
+      </condition>
+    </compare>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>272</xloc>
+      <yloc>320</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Некорректные данные</name>
+    <type>TableOutput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>avia</connection>
+    <schema>public</schema>
+    <table>rejected_fact_flights</table>
+    <commit>1000</commit>
+    <truncate>N</truncate>
+    <ignore_errors>N</ignore_errors>
+    <use_batch>Y</use_batch>
+    <specify_fields>Y</specify_fields>
+    <partitioning_enabled>N</partitioning_enabled>
+    <partitioning_field/>
+    <partitioning_daily>N</partitioning_daily>
+    <partitioning_monthly>Y</partitioning_monthly>
+    <tablename_in_field>N</tablename_in_field>
+    <tablename_field/>
+    <tablename_in_table>Y</tablename_in_table>
+    <return_keys>N</return_keys>
+    <return_field/>
+    <fields>
+      <field>
+        <column_name>fare_conditions</column_name>
+        <stream_name>fare_conditions</stream_name>
+      </field>
+      <field>
+        <column_name>amount</column_name>
+        <stream_name>amount</stream_name>
+      </field>
+      <field>
+        <column_name>passenger_code</column_name>
+        <stream_name>passenger_code</stream_name>
+      </field>
+      <field>
+        <column_name>departure_delay</column_name>
+        <stream_name>departure_delay</stream_name>
+      </field>
+      <field>
+        <column_name>arrival_delay</column_name>
+        <stream_name>arrival_delay</stream_name>
+      </field>
+      <field>
+        <column_name>departure_airport</column_name>
+        <stream_name>departure_airport</stream_name>
+      </field>
+      <field>
+        <column_name>arrival_airport</column_name>
+        <stream_name>arrival_airport</stream_name>
+      </field>
+      <field>
+        <column_name>aircraft_code</column_name>
+        <stream_name>aircraft_code</stream_name>
+      </field>
+      <field>
+        <column_name>scheduled_departure_dt</column_name>
+        <stream_name>scheduled_departure_dt</stream_name>
+      </field>
+      <field>
+        <column_name>scheduled_arrival_dt</column_name>
+        <stream_name>scheduled_arrival_dt</stream_name>
+      </field>
+      <field>
+        <column_name>actual_departure_dt</column_name>
+        <stream_name>actual_departure_dt</stream_name>
+      </field>
+      <field>
+        <column_name>actual_arrival_dt</column_name>
+        <stream_name>actual_arrival_dt</stream_name>
+      </field>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>464</xloc>
+      <yloc>176</yloc>
       <draw>Y</draw>
     </GUI>
   </step>
