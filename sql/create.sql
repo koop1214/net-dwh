@@ -1,7 +1,7 @@
 -- dim_passengers - справочник пассажиров
 CREATE TABLE IF NOT EXISTS dim_passengers
 (
-    id             int         NOT NULL PRIMARY KEY,
+    id             serial PRIMARY KEY,
     passenger_code varchar(20) NOT NULL,
     first_name     varchar(20) NOT NULL,
     last_name      varchar(20) NOT NULL,
@@ -12,10 +12,18 @@ CREATE TABLE IF NOT EXISTS dim_passengers
 CREATE INDEX IF NOT EXISTS dim_passengers_passenger_code_index
     ON dim_passengers (passenger_code);
 
+CREATE TABLE IF NOT EXISTS rejected_dim_passengers
+(
+    passenger_code varchar(20)              NOT NULL,
+    passenger_name text                     NOT NULL,
+    contact_data   jsonb,
+    created_at     timestamp WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- dim_aircrafts - справочник самолетов
 CREATE TABLE IF NOT EXISTS dim_aircrafts
 (
-    id            int     NOT NULL PRIMARY KEY,
+    id            serial PRIMARY KEY,
     aircraft_code char(3) NOT NULL,
     model         text    NOT NULL,
     range         integer NOT NULL
@@ -24,10 +32,18 @@ CREATE TABLE IF NOT EXISTS dim_aircrafts
 CREATE INDEX IF NOT EXISTS dim_aircrafts_aircraft_code_index
     ON dim_aircrafts (aircraft_code);
 
+CREATE TABLE IF NOT EXISTS rejected_dim_aircrafts
+(
+    aircraft_code char(3)                  NOT NULL,
+    model         text                     NOT NULL,
+    range         integer                  NOT NULL,
+    created_at    timestamp WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- dim_airports - справочник аэропортов
 CREATE TABLE IF NOT EXISTS dim_airports
 (
-    id           int           NOT NULL PRIMARY KEY,
+    id           serial PRIMARY KEY,
     airport_code char(3)       NOT NULL,
     airport_name text          NOT NULL,
     city         text          NOT NULL,
@@ -39,10 +55,21 @@ CREATE TABLE IF NOT EXISTS dim_airports
 CREATE INDEX IF NOT EXISTS dim_airports_airport_code_index
     ON dim_airports (airport_code);
 
+CREATE TABLE IF NOT EXISTS rejected_dim_airports
+(
+    airport_code char(3)                  NOT NULL,
+    airport_name text                     NOT NULL,
+    city         text                     NOT NULL,
+    longitude    decimal(9, 3)            NOT NULL,
+    latitude     decimal(9, 3)            NOT NULL,
+    timezone     text                     NOT NULL,
+    created_at   timestamp WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- dim_tariff - справочник тарифов (Эконом/бизнес и тд)
 CREATE TABLE IF NOT EXISTS dim_tariffs
 (
-    id          int         NOT NULL PRIMARY KEY,
+    id          serial PRIMARY KEY,
     tariff_code varchar(10) NOT NULL
 );
 
@@ -98,15 +125,16 @@ ALTER TABLE dim_calendar
 
 CREATE TABLE IF NOT EXISTS fact_flights
 (
-    passenger_id         int                      NOT NULL REFERENCES dim_passengers (id),
-    date_id              int                      NOT NULL REFERENCES dim_calendar (id),
-    actual_departure_dt  timestamp WITH TIME ZONE NOT NULL,
-    actual_arrival_dt    timestamp WITH TIME ZONE NOT NULL,
-    departure_delay      int                      NOT NULL,
-    arrival_delay        int                      NOT NULL,
-    aircraft_id          int                      NOT NULL REFERENCES dim_aircrafts (id),
-    departure_airport_id int                      NOT NULL REFERENCES dim_airports (id),
-    arrival_airport_id   int                      NOT NULL REFERENCES dim_airports (id),
-    tariff_id            int                      NOT NULL REFERENCES dim_tariffs (id),
-    amount               numeric(10, 2)           NOT NULL
+    passenger_id             int                      NOT NULL REFERENCES dim_passengers (id),
+    actual_departure_dt      timestamp WITH TIME ZONE NOT NULL,
+    actual_departure_date_id int                      NOT NULL REFERENCES dim_calendar (id),
+    actual_arrival_dt        timestamp WITH TIME ZONE NOT NULL,
+    actual_arrival_date_id   int                      NOT NULL REFERENCES dim_calendar (id),
+    departure_delay          int                      NOT NULL DEFAULT 0,
+    arrival_delay            int                      NOT NULL DEFAULT 0,
+    aircraft_id              int                      NOT NULL REFERENCES dim_aircrafts (id),
+    departure_airport_id     int                      NOT NULL REFERENCES dim_airports (id),
+    arrival_airport_id       int                      NOT NULL REFERENCES dim_airports (id),
+    tariff_id                int                      NOT NULL REFERENCES dim_tariffs (id),
+    amount                   numeric(10, 2)           NOT NULL
 );
