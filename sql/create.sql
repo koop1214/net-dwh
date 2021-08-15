@@ -10,11 +10,14 @@ CREATE TABLE IF NOT EXISTS dim_passengers
 CREATE INDEX IF NOT EXISTS dim_passengers_passenger_code_index
     ON dim_passengers (passenger_code);
 
+-- Для всех полей в rejected-таблицах нужно не “жадничать” и выделить размерность с запасом.
+-- “Плохие” данные могут  быть больше, чем ожидалось изначально.
 CREATE TABLE IF NOT EXISTS rejected_dim_passengers
 (
-    passenger_code varchar(20)              NOT NULL,
+    passenger_code varchar(200)             NOT NULL,
     passenger_name text                     NOT NULL,
     contact_data   jsonb,
+    error          text,
     created_at     timestamp WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -32,9 +35,10 @@ CREATE INDEX IF NOT EXISTS dim_aircrafts_aircraft_code_index
 
 CREATE TABLE IF NOT EXISTS rejected_dim_aircrafts
 (
-    aircraft_code char(3)                  NOT NULL,
+    aircraft_code char(100)                NOT NULL,
     model         text                     NOT NULL,
     range         integer                  NOT NULL,
+    error         text,
     created_at    timestamp WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -55,12 +59,13 @@ CREATE INDEX IF NOT EXISTS dim_airports_airport_code_index
 
 CREATE TABLE IF NOT EXISTS rejected_dim_airports
 (
-    airport_code char(3)                  NOT NULL,
+    airport_code char(100)                NOT NULL,
     airport_name text                     NOT NULL,
     city         text                     NOT NULL,
     longitude    decimal(9, 3)            NOT NULL,
     latitude     decimal(9, 3)            NOT NULL,
     timezone     text                     NOT NULL,
+    error        text,
     created_at   timestamp WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -74,6 +79,35 @@ CREATE TABLE IF NOT EXISTS dim_tariffs
 CREATE INDEX IF NOT EXISTS dim_tariffs_tariff_code_index
     ON dim_tariffs (tariff_code);
 
+-- holidays - Справочник праздничных дней, может быть общим для многих проектов
+CREATE TABLE IF NOT EXISTS holidays
+(
+    date        date PRIMARY KEY,
+    description text
+);
+
+INSERT INTO holidays (date)
+VALUES ('2016-01-01'),
+       ('2016-01-02'),
+       ('2016-01-03'),
+       ('2016-01-04'),
+       ('2016-01-05'),
+       ('2016-01-06'),
+       ('2016-01-07'),
+       ('2016-01-08'),
+       ('2016-02-22'),
+       ('2016-02-23'),
+       ('2016-03-07'),
+       ('2016-03-08'),
+       ('2016-05-01'),
+       ('2016-05-02'),
+       ('2016-05-03'),
+       ('2016-05-09'),
+       ('2016-06-12'),
+       ('2016-06-13'),
+       ('2016-11-04'),
+       ('2017-01-01');
+
 -- dim_calendar - справочник дат
 CREATE TABLE IF NOT EXISTS dim_calendar
 AS
@@ -84,35 +118,15 @@ AS
                  , '2017-01-01'::timestamp
                  , '1 day'::interval) dd
   )
-SELECT TO_CHAR(dt, 'YYYYMMDD')::int                             AS id,
-       dt                                                       AS date,
-       TO_CHAR(dt, 'YYYY-MM-DD')                                AS ansi_date,
-       DATE_PART('isodow', dt)::int                             AS day,
-       DATE_PART('week', dt)::int                               AS week_number,
-       DATE_PART('month', dt)::int                              AS month,
-       DATE_PART('isoyear', dt)::int                            AS iso_year,
-       (DATE_PART('isodow', dt)::smallint BETWEEN 1 AND 5)::int AS week_day,
-       (TO_CHAR(dt, 'YYYYMMDD')::int IN (
-                                         20160101,
-                                         20160102,
-                                         20160103,
-                                         20160104,
-                                         20160105,
-                                         20160106,
-                                         20160107,
-                                         20160108,
-                                         20160222,
-                                         20160223,
-                                         20160307,
-                                         20160308,
-                                         20160501,
-                                         20160502,
-                                         20160503,
-                                         20160509,
-                                         20160612,
-                                         20160613,
-                                         20161104,
-                                         20170101))::int        AS holiday
+SELECT TO_CHAR(dt, 'YYYYMMDD')::int                                                            AS id,
+       dt                                                                                      AS date,
+       TO_CHAR(dt, 'YYYY-MM-DD')                                                               AS ansi_date,
+       DATE_PART('isodow', dt)::int                                                            AS day,
+       DATE_PART('week', dt)::int                                                              AS week_number,
+       DATE_PART('month', dt)::int                                                             AS month,
+       DATE_PART('isoyear', dt)::int                                                           AS iso_year,
+       (DATE_PART('isodow', dt)::smallint BETWEEN 1 AND 5)::int                                AS week_day,
+       (TO_CHAR(dt, 'YYYYMMDD')::int IN (SELECT TO_CHAR(date, 'YYYYMMDD')::int FROM holidays)) AS holiday
   FROM dates
  ORDER BY dt;
 
@@ -139,17 +153,40 @@ CREATE TABLE IF NOT EXISTS fact_flights
 
 CREATE TABLE IF NOT EXISTS rejected_fact_flights
 (
-    passenger_code         varchar(20)              NOT NULL,
+    passenger_code         varchar(200)             NOT NULL,
     scheduled_departure_dt timestamp WITH TIME ZONE NOT NULL,
     actual_departure_dt    timestamp WITH TIME ZONE NOT NULL,
     departure_delay        int                      NOT NULL DEFAULT 0,
     scheduled_arrival_dt   timestamp WITH TIME ZONE NOT NULL,
     actual_arrival_dt      timestamp WITH TIME ZONE NOT NULL,
     arrival_delay          int                      NOT NULL DEFAULT 0,
-    aircraft_code          char(3)                  NOT NULL,
-    departure_airport      char(3)                  NOT NULL,
-    arrival_airport        char(3)                  NOT NULL,
-    fare_conditions        varchar(10)              NOT NULL,
+    aircraft_code          char(100)                NOT NULL,
+    departure_airport      char(100)                NOT NULL,
+    arrival_airport        char(100)                NOT NULL,
+    fare_conditions        varchar(100)             NOT NULL,
     amount                 numeric(10, 2)           NOT NULL,
+    error                  text,
     created_at             timestamp WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS fact_flights_actual_arrival_date_id_index
+    ON fact_flights (actual_arrival_date_id);
+
+CREATE INDEX IF NOT EXISTS fact_flights_actual_departure_date_id_index
+    ON fact_flights (actual_departure_date_id);
+
+CREATE INDEX IF NOT EXISTS fact_flights_aircraft_id_index
+    ON fact_flights (aircraft_id);
+
+CREATE INDEX IF NOT EXISTS fact_flights_arrival_airport_id_index
+    ON fact_flights (arrival_airport_id);
+
+CREATE INDEX IF NOT EXISTS fact_flights_departure_airport_id_index
+    ON fact_flights (departure_airport_id);
+
+CREATE INDEX IF NOT EXISTS fact_flights_passenger_id_index
+    ON fact_flights (passenger_id);
+
+CREATE INDEX IF NOT EXISTS fact_flights_tariff_id_index
+    ON fact_flights (tariff_id);
+

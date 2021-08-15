@@ -562,13 +562,18 @@
       <enabled>Y</enabled>
     </hop>
     <hop>
-      <from>Проверка качества</from>
-      <to>Обновления измерения</to>
-      <enabled>Y</enabled>
+      <from>Test data</from>
+      <to>Проверка качества</to>
+      <enabled>N</enabled>
     </hop>
     <hop>
       <from>Проверка качества</from>
       <to>Некорректные данные</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Проверка качества</from>
+      <to>Обновления измерения</to>
       <enabled>Y</enabled>
     </hop>
   </order>
@@ -966,6 +971,10 @@
         <column_name>contact_data</column_name>
         <stream_name>contact_data</stream_name>
       </field>
+      <field>
+        <column_name>error</column_name>
+        <stream_name>error_descriptions</stream_name>
+      </field>
     </fields>
     <attributes/>
     <cluster_schema/>
@@ -1036,7 +1045,7 @@
   </step>
   <step>
     <name>Проверка качества</name>
-    <type>FilterRows</type>
+    <type>Validator</type>
     <description/>
     <distribute>Y</distribute>
     <custom_distribution/>
@@ -1045,142 +1054,149 @@
       <method>none</method>
       <schema_name/>
     </partitioning>
-    <send_true_to>Обновления измерения</send_true_to>
-    <send_false_to>Некорректные данные</send_false_to>
-    <compare>
-      <condition>
-        <negated>N</negated>
-        <conditions>
-          <condition>
-            <negated>N</negated>
-            <leftvalue>passenger_id</leftvalue>
-            <function>REGEXP</function>
-            <rightvalue/>
-            <value>
-              <name>constant</name>
-              <type>String</type>
-              <text>\d{4} \d{6}</text>
-              <length>-1</length>
-              <precision>-1</precision>
-              <isnull>N</isnull>
-              <mask/>
-            </value>
-          </condition>
-          <condition>
-            <negated>N</negated>
-            <operator>AND</operator>
-            <conditions>
-              <condition>
-                <negated>N</negated>
-                <leftvalue>last_name</leftvalue>
-                <function>IS NOT NULL</function>
-                <rightvalue/>
-              </condition>
-              <condition>
-                <negated>N</negated>
-                <operator>AND</operator>
-                <leftvalue>last_name</leftvalue>
-                <function>REGEXP</function>
-                <rightvalue/>
-                <value>
-                  <name>constant</name>
-                  <type>String</type>
-                  <text>[A-Z]{2,}</text>
-                  <length>-1</length>
-                  <precision>-1</precision>
-                  <isnull>N</isnull>
-                  <mask/>
-                </value>
-              </condition>
-            </conditions>
-          </condition>
-          <condition>
-            <negated>N</negated>
-            <operator>AND</operator>
-            <conditions>
-              <condition>
-                <negated>N</negated>
-                <leftvalue>first_name</leftvalue>
-                <function>IS NOT NULL</function>
-                <rightvalue/>
-              </condition>
-              <condition>
-                <negated>N</negated>
-                <operator>AND</operator>
-                <leftvalue>first_name</leftvalue>
-                <function>REGEXP</function>
-                <rightvalue/>
-                <value>
-                  <name>constant</name>
-                  <type>String</type>
-                  <text>[A-Z]{2,}</text>
-                  <length>-1</length>
-                  <precision>-1</precision>
-                  <isnull>N</isnull>
-                  <mask/>
-                </value>
-              </condition>
-            </conditions>
-          </condition>
-          <condition>
-            <negated>N</negated>
-            <operator>AND</operator>
-            <conditions>
-              <condition>
-                <negated>N</negated>
-                <leftvalue>phone</leftvalue>
-                <function>IS NOT NULL</function>
-                <rightvalue/>
-              </condition>
-              <condition>
-                <negated>N</negated>
-                <operator>AND</operator>
-                <leftvalue>phone</leftvalue>
-                <function>REGEXP</function>
-                <rightvalue/>
-                <value>
-                  <name>constant</name>
-                  <type>String</type>
-                  <text>7[0-9]{10}</text>
-                  <length>-1</length>
-                  <precision>-1</precision>
-                  <isnull>N</isnull>
-                  <mask>####0;-####0</mask>
-                </value>
-              </condition>
-            </conditions>
-          </condition>
-          <condition>
-            <negated>N</negated>
-            <operator>AND</operator>
-            <conditions>
-              <condition>
-                <negated>N</negated>
-                <leftvalue>email</leftvalue>
-                <function>IS NULL</function>
-                <rightvalue/>
-              </condition>
-              <condition>
-                <negated>N</negated>
-                <operator>OR</operator>
-                <leftvalue>email</leftvalue>
-                <function>REGEXP</function>
-                <rightvalue/>
-                <value>
-                  <name>constant</name>
-                  <type>String</type>
-                  <text>\S+@\S+</text>
-                  <length>-1</length>
-                  <precision>-1</precision>
-                  <isnull>N</isnull>
-                  <mask/>
-                </value>
-              </condition>
-            </conditions>
-          </condition>
-        </conditions>
-      </condition>
-    </compare>
+    <validate_all>Y</validate_all>
+    <concat_errors>Y</concat_errors>
+    <concat_separator>|</concat_separator>
+    <validator_field>
+      <name>passenger_id</name>
+      <validation_name>passenger id</validation_name>
+      <max_length/>
+      <min_length/>
+      <null_allowed>N</null_allowed>
+      <only_null_allowed>N</only_null_allowed>
+      <only_numeric_allowed>N</only_numeric_allowed>
+      <data_type>None</data_type>
+      <data_type_verified>N</data_type_verified>
+      <conversion_mask/>
+      <decimal_symbol/>
+      <grouping_symbol/>
+      <max_value/>
+      <min_value/>
+      <start_string/>
+      <end_string/>
+      <start_string_not_allowed/>
+      <end_string_not_allowed/>
+      <regular_expression>\d{4} \d{6}</regular_expression>
+      <regular_expression_not_allowed/>
+      <error_code/>
+      <error_description/>
+      <is_sourcing_values>N</is_sourcing_values>
+      <sourcing_step/>
+      <sourcing_field/>
+      <allowed_value/>
+    </validator_field>
+    <validator_field>
+      <name>last_name</name>
+      <validation_name>last name</validation_name>
+      <max_length/>
+      <min_length/>
+      <null_allowed>N</null_allowed>
+      <only_null_allowed>N</only_null_allowed>
+      <only_numeric_allowed>N</only_numeric_allowed>
+      <data_type>None</data_type>
+      <data_type_verified>N</data_type_verified>
+      <conversion_mask/>
+      <decimal_symbol/>
+      <grouping_symbol/>
+      <max_value/>
+      <min_value/>
+      <start_string/>
+      <end_string/>
+      <start_string_not_allowed/>
+      <end_string_not_allowed/>
+      <regular_expression>[A-Z]{2,}</regular_expression>
+      <regular_expression_not_allowed/>
+      <error_code/>
+      <error_description/>
+      <is_sourcing_values>N</is_sourcing_values>
+      <sourcing_step/>
+      <sourcing_field/>
+      <allowed_value/>
+    </validator_field>
+    <validator_field>
+      <name>first_name</name>
+      <validation_name>first name</validation_name>
+      <max_length/>
+      <min_length/>
+      <null_allowed>N</null_allowed>
+      <only_null_allowed>N</only_null_allowed>
+      <only_numeric_allowed>N</only_numeric_allowed>
+      <data_type>None</data_type>
+      <data_type_verified>N</data_type_verified>
+      <conversion_mask/>
+      <decimal_symbol/>
+      <grouping_symbol/>
+      <max_value/>
+      <min_value/>
+      <start_string/>
+      <end_string/>
+      <start_string_not_allowed/>
+      <end_string_not_allowed/>
+      <regular_expression>[A-Z]{2,}</regular_expression>
+      <regular_expression_not_allowed/>
+      <error_code/>
+      <error_description/>
+      <is_sourcing_values>N</is_sourcing_values>
+      <sourcing_step/>
+      <sourcing_field/>
+      <allowed_value/>
+    </validator_field>
+    <validator_field>
+      <name>phone</name>
+      <validation_name>phone</validation_name>
+      <max_length/>
+      <min_length/>
+      <null_allowed>N</null_allowed>
+      <only_null_allowed>N</only_null_allowed>
+      <only_numeric_allowed>N</only_numeric_allowed>
+      <data_type>None</data_type>
+      <data_type_verified>N</data_type_verified>
+      <conversion_mask/>
+      <decimal_symbol/>
+      <grouping_symbol/>
+      <max_value/>
+      <min_value/>
+      <start_string/>
+      <end_string/>
+      <start_string_not_allowed/>
+      <end_string_not_allowed/>
+      <regular_expression>7[0-9]{10}</regular_expression>
+      <regular_expression_not_allowed/>
+      <error_code/>
+      <error_description/>
+      <is_sourcing_values>N</is_sourcing_values>
+      <sourcing_step/>
+      <sourcing_field/>
+      <allowed_value/>
+    </validator_field>
+    <validator_field>
+      <name>email</name>
+      <validation_name>email</validation_name>
+      <max_length/>
+      <min_length/>
+      <null_allowed>Y</null_allowed>
+      <only_null_allowed>N</only_null_allowed>
+      <only_numeric_allowed>N</only_numeric_allowed>
+      <data_type>None</data_type>
+      <data_type_verified>N</data_type_verified>
+      <conversion_mask/>
+      <decimal_symbol/>
+      <grouping_symbol/>
+      <max_value/>
+      <min_value/>
+      <start_string/>
+      <end_string/>
+      <start_string_not_allowed/>
+      <end_string_not_allowed/>
+      <regular_expression>\S+@\S+</regular_expression>
+      <regular_expression_not_allowed/>
+      <error_code/>
+      <error_description/>
+      <is_sourcing_values>N</is_sourcing_values>
+      <sourcing_step/>
+      <sourcing_field/>
+      <allowed_value/>
+    </validator_field>
     <attributes/>
     <cluster_schema/>
     <remotesteps>
@@ -1190,12 +1206,209 @@
       </output>
     </remotesteps>
     <GUI>
-      <xloc>368</xloc>
+      <xloc>352</xloc>
       <yloc>192</yloc>
       <draw>Y</draw>
     </GUI>
   </step>
+  <step>
+    <name>Test data</name>
+    <type>DataGrid</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fields>
+      <field>
+        <name>passenger_id</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+        <field_null_if/>
+      </field>
+      <field>
+        <name>passenger_name</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+        <field_null_if/>
+      </field>
+      <field>
+        <name>first_name</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+        <field_null_if/>
+      </field>
+      <field>
+        <name>last_name</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+        <field_null_if/>
+      </field>
+      <field>
+        <name>contact_data</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+        <field_null_if/>
+      </field>
+      <field>
+        <name>phone</name>
+        <type>Integer</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+        <field_null_if/>
+      </field>
+      <field>
+        <name>email</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+        <field_null_if/>
+      </field>
+    </fields>
+    <data>
+      <line>
+        <item>1234567</item>
+        <item>ELENA KUZMINA</item>
+        <item>ELENA</item>
+        <item>KUZMINA</item>
+        <item/>
+        <item>79211234567</item>
+        <item/>
+      </line>
+      <line>
+        <item>0003 123456</item>
+        <item>ELENA KUZMINA</item>
+        <item>ELENA</item>
+        <item>KUZMINA</item>
+        <item/>
+        <item/>
+        <item/>
+      </line>
+      <line>
+        <item>0003 123456</item>
+        <item>ELENA KUZMINA</item>
+        <item>ELENA</item>
+        <item>KUZMINA</item>
+        <item/>
+        <item>81200000</item>
+        <item/>
+      </line>
+      <line>
+        <item>1234 123456</item>
+        <item>KUZMINA</item>
+        <item/>
+        <item>KUZMINA</item>
+        <item/>
+        <item>79211234567</item>
+        <item/>
+      </line>
+      <line>
+        <item>0001 123456</item>
+        <item>KUZMINA</item>
+        <item>КРИСТИНА</item>
+        <item>KUZMINA</item>
+        <item/>
+        <item>79211234567</item>
+        <item/>
+      </line>
+      <line>
+        <item>0002 123456</item>
+        <item>ELENA</item>
+        <item>ELENA</item>
+        <item/>
+        <item/>
+        <item>79211234567</item>
+        <item/>
+      </line>
+      <line>
+        <item>0004 123456</item>
+        <item>ELENA</item>
+        <item>ELENA</item>
+        <item>КУЗЬМИНА</item>
+        <item/>
+        <item>79211234567</item>
+        <item/>
+      </line>
+      <line>
+        <item>0004 123456</item>
+        <item>ELENA</item>
+        <item>ELENA</item>
+        <item>KUZMINA</item>
+        <item/>
+        <item>79211234567</item>
+        <item>rrrr#sss.rr</item>
+      </line>
+    </data>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>192</xloc>
+      <yloc>304</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
   <step_error_handling>
+    <error>
+      <source_step>Проверка качества</source_step>
+      <target_step>Некорректные данные</target_step>
+      <is_enabled>Y</is_enabled>
+      <nr_valuename>nr_errors</nr_valuename>
+      <descriptions_valuename>error_descriptions</descriptions_valuename>
+      <fields_valuename>error_fields</fields_valuename>
+      <codes_valuename>error_codes</codes_valuename>
+      <max_errors/>
+      <max_pct_errors/>
+      <min_pct_rows/>
+    </error>
   </step_error_handling>
   <slave-step-copy-partition-distribution>
   </slave-step-copy-partition-distribution>

@@ -587,12 +587,12 @@
     </hop>
     <hop>
       <from>Проверка качества</from>
-      <to>aircraft</to>
+      <to>Некорректные данные</to>
       <enabled>Y</enabled>
     </hop>
     <hop>
       <from>Проверка качества</from>
-      <to>Некорректные данные</to>
+      <to>aircraft</to>
       <enabled>Y</enabled>
     </hop>
   </order>
@@ -715,7 +715,8 @@
        f.actual_departure                                                                 AS actual_departure_dt, -- actual_departure_dt
        f.actual_arrival                                                                   AS actual_arrival_dt,   -- actual_arrival_dt
        TO_CHAR(f.actual_departure, 'YYYYMMDD')::int                                       AS actual_departure_date_id,
-       TO_CHAR(f.actual_arrival, 'YYYYMMDD')::int                                         AS actual_arrival_date_id
+       TO_CHAR(f.actual_arrival, 'YYYYMMDD')::int                                         AS actual_arrival_date_id,
+       EXTRACT(EPOCH FROM f.actual_arrival - f.actual_departure)                          AS duration
   FROM bookings.flights f
            JOIN bookings.ticket_flights tf ON tf.flight_id = f.flight_id
            JOIN bookings.tickets t ON t.ticket_no = tf.ticket_no
@@ -1050,6 +1051,29 @@
         <date_format_timezone>Europe/Moscow</date_format_timezone>
         <lenient_string_to_number>N</lenient_string_to_number>
       </value-meta>
+      <value-meta>
+        <type>Number</type>
+        <storagetype>normal</storagetype>
+        <name>duration</name>
+        <length>-1</length>
+        <precision>-1</precision>
+        <origin>demo.bookings.flights</origin>
+        <comments>duration</comments>
+        <conversion_Mask>####0.0#########;-####0.0#########</conversion_Mask>
+        <decimal_symbol>.</decimal_symbol>
+        <grouping_symbol>,</grouping_symbol>
+        <currency_symbol/>
+        <trim_type>none</trim_type>
+        <case_insensitive>N</case_insensitive>
+        <collator_disabled>Y</collator_disabled>
+        <collator_strength>0</collator_strength>
+        <sort_descending>N</sort_descending>
+        <output_padding>N</output_padding>
+        <date_format_lenient>N</date_format_lenient>
+        <date_format_locale>en_US</date_format_locale>
+        <date_format_timezone>Europe/Moscow</date_format_timezone>
+        <lenient_string_to_number>N</lenient_string_to_number>
+      </value-meta>
     </row-meta>
     <attributes/>
     <cluster_schema/>
@@ -1299,78 +1323,6 @@
     </GUI>
   </step>
   <step>
-    <name>Проверка качества</name>
-    <type>FilterRows</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <send_true_to>aircraft</send_true_to>
-    <send_false_to>Некорректные данные</send_false_to>
-    <compare>
-      <condition>
-        <negated>N</negated>
-        <conditions>
-          <condition>
-            <negated>N</negated>
-            <leftvalue>departure_delay</leftvalue>
-            <function>&gt;=</function>
-            <rightvalue/>
-            <value>
-              <name>constant</name>
-              <type>Number</type>
-              <text>0.0</text>
-              <length>-1</length>
-              <precision>-1</precision>
-              <isnull>N</isnull>
-              <mask>####0.0#########;-####0.0#########</mask>
-            </value>
-          </condition>
-          <condition>
-            <negated>N</negated>
-            <operator>AND</operator>
-            <leftvalue>amount</leftvalue>
-            <function>&gt;</function>
-            <rightvalue/>
-            <value>
-              <name>constant</name>
-              <type>Number</type>
-              <text>0.0</text>
-              <length>-1</length>
-              <precision>-1</precision>
-              <isnull>N</isnull>
-              <mask>####0.0#########;-####0.0#########</mask>
-            </value>
-          </condition>
-          <condition>
-            <negated>N</negated>
-            <operator>AND</operator>
-            <leftvalue>actual_arrival_dt</leftvalue>
-            <function>&gt;</function>
-            <rightvalue>actual_departure_dt</rightvalue>
-          </condition>
-        </conditions>
-      </condition>
-    </compare>
-    <attributes/>
-    <cluster_schema/>
-    <remotesteps>
-      <input>
-      </input>
-      <output>
-      </output>
-    </remotesteps>
-    <GUI>
-      <xloc>272</xloc>
-      <yloc>320</yloc>
-      <draw>Y</draw>
-    </GUI>
-  </step>
-  <step>
     <name>Некорректные данные</name>
     <type>TableOutput</type>
     <description/>
@@ -1447,6 +1399,10 @@
         <column_name>actual_arrival_dt</column_name>
         <stream_name>actual_arrival_dt</stream_name>
       </field>
+      <field>
+        <column_name>error</column_name>
+        <stream_name>error_descriptions</stream_name>
+      </field>
     </fields>
     <attributes/>
     <cluster_schema/>
@@ -1462,7 +1418,131 @@
       <draw>Y</draw>
     </GUI>
   </step>
+  <step>
+    <name>Проверка качества</name>
+    <type>Validator</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <validate_all>Y</validate_all>
+    <concat_errors>Y</concat_errors>
+    <concat_separator>|</concat_separator>
+    <validator_field>
+      <name>amount</name>
+      <validation_name>amount</validation_name>
+      <max_length/>
+      <min_length/>
+      <null_allowed>N</null_allowed>
+      <only_null_allowed>N</only_null_allowed>
+      <only_numeric_allowed>N</only_numeric_allowed>
+      <data_type>Number</data_type>
+      <data_type_verified>Y</data_type_verified>
+      <conversion_mask/>
+      <decimal_symbol/>
+      <grouping_symbol/>
+      <max_value/>
+      <min_value>0</min_value>
+      <start_string/>
+      <end_string/>
+      <start_string_not_allowed/>
+      <end_string_not_allowed/>
+      <regular_expression/>
+      <regular_expression_not_allowed/>
+      <error_code/>
+      <error_description/>
+      <is_sourcing_values>N</is_sourcing_values>
+      <sourcing_step/>
+      <sourcing_field/>
+      <allowed_value/>
+    </validator_field>
+    <validator_field>
+      <name>departure_delay</name>
+      <validation_name>departure delay</validation_name>
+      <max_length/>
+      <min_length/>
+      <null_allowed>N</null_allowed>
+      <only_null_allowed>N</only_null_allowed>
+      <only_numeric_allowed>N</only_numeric_allowed>
+      <data_type>Number</data_type>
+      <data_type_verified>Y</data_type_verified>
+      <conversion_mask/>
+      <decimal_symbol/>
+      <grouping_symbol/>
+      <max_value/>
+      <min_value>0</min_value>
+      <start_string/>
+      <end_string/>
+      <start_string_not_allowed/>
+      <end_string_not_allowed/>
+      <regular_expression/>
+      <regular_expression_not_allowed/>
+      <error_code/>
+      <error_description/>
+      <is_sourcing_values>N</is_sourcing_values>
+      <sourcing_step/>
+      <sourcing_field/>
+      <allowed_value/>
+    </validator_field>
+    <validator_field>
+      <name>duration</name>
+      <validation_name>duration</validation_name>
+      <max_length/>
+      <min_length/>
+      <null_allowed>N</null_allowed>
+      <only_null_allowed>N</only_null_allowed>
+      <only_numeric_allowed>N</only_numeric_allowed>
+      <data_type>Number</data_type>
+      <data_type_verified>Y</data_type_verified>
+      <conversion_mask/>
+      <decimal_symbol/>
+      <grouping_symbol/>
+      <max_value/>
+      <min_value>0</min_value>
+      <start_string/>
+      <end_string/>
+      <start_string_not_allowed/>
+      <end_string_not_allowed/>
+      <regular_expression/>
+      <regular_expression_not_allowed/>
+      <error_code/>
+      <error_description/>
+      <is_sourcing_values>N</is_sourcing_values>
+      <sourcing_step/>
+      <sourcing_field/>
+      <allowed_value/>
+    </validator_field>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>256</xloc>
+      <yloc>320</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
   <step_error_handling>
+    <error>
+      <source_step>Проверка качества</source_step>
+      <target_step>Некорректные данные</target_step>
+      <is_enabled>Y</is_enabled>
+      <nr_valuename>nr_errors</nr_valuename>
+      <descriptions_valuename>error_descriptions</descriptions_valuename>
+      <fields_valuename>error_fields</fields_valuename>
+      <codes_valuename>error_codes</codes_valuename>
+      <max_errors/>
+      <max_pct_errors/>
+      <min_pct_rows/>
+    </error>
   </step_error_handling>
   <slave-step-copy-partition-distribution>
   </slave-step-copy-partition-distribution>

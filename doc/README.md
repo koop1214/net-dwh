@@ -18,7 +18,7 @@ SELECT DISTINCT passenger_id,
 ```
 
 ### Проверка качества
-Фильтруем с помощью _Filter rows_
+Фильтруем с помощью _Data validator_
 * Формат документа (паспорта) — 4 цифры — серия паспорта + 6 цифр - номер
 * ФИО пассажира — только латинские буквы и тире, минимальная длина - 2 символа
 * контакты пассажира обязательно должны включать номер телефона
@@ -41,7 +41,7 @@ SELECT * FROM bookings.aircrafts;
 ```
 
 ### Проверка качества
-Фильтруем с помощью _Filter rows_
+Фильтруем с помощью _Data validator_
 * Максимальная дальность полета (range) должна быть положительным числом
 * Код типа самолета ИАТА (aircraft_code) — код из 3 знаков (букв латинского алфавита и цифр)
 * Модель самолета — латинские буквы, цифры, тире и пробельный символ
@@ -63,7 +63,7 @@ SELECT * FROM bookings.airports;
 ```
 
 ### Проверка качества
-Фильтруем с помощью _Filter rows_
+Фильтруем с помощью _Data validator_
 * Код аэропорта ИАТА (airport_code) — код из 3 букв латинского алфавита
 * Широты (latitude) — число в диапазоне [-90, 90]
 * Долгота (longitude) — число в диапазоне [-180, 180]
@@ -108,7 +108,8 @@ SELECT tf.fare_conditions,                                                      
        f.actual_departure                                                                 AS actual_departure_dt, -- actual_departure_dt
        f.actual_arrival                                                                   AS actual_arrival_dt,   -- actual_arrival_dt
        TO_CHAR(f.actual_departure, 'YYYYMMDD')::int                                       AS actual_departure_date_id,
-       TO_CHAR(f.actual_arrival, 'YYYYMMDD')::int                                         AS actual_arrival_date_id
+       TO_CHAR(f.actual_arrival, 'YYYYMMDD')::int                                         AS actual_arrival_date_id,
+       EXTRACT(EPOCH FROM f.actual_arrival - f.actual_departure)                          AS duration
   FROM bookings.flights f
            JOIN bookings.ticket_flights tf ON tf.flight_id = f.flight_id
            JOIN bookings.tickets t ON t.ticket_no = tf.ticket_no
@@ -117,7 +118,7 @@ SELECT tf.fare_conditions,                                                      
 ```
 
 ### Проверка качества
-Фильтруем с помощью _Filter rows_
+Фильтруем с помощью _Data validator_
 * Задержка вылета — число неотрицательное
 * Стоимость — число положительное
 * Фактическое время прилета не может быть раньше фактического времени вылета
@@ -137,5 +138,40 @@ SELECT tf.fare_conditions,                                                      
 Для записи в таблицу `fact_flights` используем шаг _Table output_
 
 ![](../screenshots/fact_flights.png)
+
+## Общее задание
+Описанные выше трансформации объединяем в задание (job), чтобы можно было ставить ETL на расписание. Задание также гарантирует очередность запуска операций трансформаций, т.к. важно, чтобы таблицы измерений обрабатывались раньше таблицы фактов.
+
+![](../screenshots/stg2dwh.png)
+
+Для ускорения загрузки данных отключаем индексы в начале:
+```sql
+UPDATE pg_index
+   SET indisready= FALSE
+ WHERE indrelid IN (
+     SELECT oid
+       FROM pg_class
+      WHERE relname IN ('fact_flights', 'dim_passengers', 'dim_aircrafts', 'dim_airports', 'dim_tariffs')
+ )
+   AND indisprimary = FALSE;
+```
+
+включаем и перестраиваем в конце:
+```sql
+UPDATE pg_index
+   SET indisready= TRUE
+ WHERE indrelid IN (
+     SELECT oid
+       FROM pg_class
+      WHERE relname IN ('fact_flights', 'dim_passengers', 'dim_aircrafts', 'dim_airports', 'dim_tariffs')
+ )
+   AND indisprimary = FALSE;
+
+REINDEX TABLE dim_aircrafts;
+REINDEX TABLE dim_passengers;
+REINDEX TABLE dim_airports;
+REINDEX TABLE dim_tariffs;
+REINDEX TABLE fact_flights;
+```
 
 
